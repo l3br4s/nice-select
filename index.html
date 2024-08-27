@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>WebComp</title>
+
+	<style>
+		html {
+			font-family: sans-serif;
+		}
+		/* nice-select {
+			min-width: 0;
+		} */
+	</style>
+
+	<script src="webcomp.js" defer></script>
+
+	<script>
+
+		function addOption() {
+			var select = document.querySelector('nice-select');
+			var option = document.createElement('option');
+			option.textContent = 'Test';
+			option.value = 'test';
+			select.appendChild(option);
+		}
+	</script>
+</head>
+<body>
+
+<!--
+<nice-select search>
+	<input type="radio" name="bdfds" value="Keuner" placeholder="Keuner"> Keuner
+	<input type="radio" name="bs" value="Kranz" placeholder="Kranz"> Kranz
+	<input type="radio" value="Kanzler" placeholder="Kanzler"> Kanzler
+	<input type="checkbox" name="bs" value="Kanzler"> Cheklc
+	<p><b>Sehr geehrte Damen und Herren,</b></p>
+</nice-select> -->
+
+<p>
+	Es war ein schöner Tag für den
+
+	<nice-select search placeholder="Bitte wählen" data-search-placeholder="Suche...">
+		<option value="Keuner" selected>Keuner</option>
+		<option value="Kranz">Kranz</option>
+		<option value="Kanzler" selected>Kanzler</option>
+		<option value=""></option>
+		<input type="checkbox" name="bs" value="Kanzler"> Cheklc
+	</nice-select>
+
+	in Stralsund.
+</p>
+
+
+<br>
+<button onclick="addOption()">
+	Click me
+</button>
+<br>
+<br>
+
+<select name="koins" id="mor" data-search>
+	<option value="test">Test</option>
+	<option value="test2">Feier2</option>
+	<option value="test3">Gaudi3</option>
+	<option value=""></option>
+	<p><b>Sehr geehrte Damen und Herren,</b></p>
+</select>
+
+
+
+</body>
+</html>
