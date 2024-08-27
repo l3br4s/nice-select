@@ -50,12 +50,15 @@ customElements.define(
 					padding-inline-end: .3em;
 				}
 				option {
+					box-sizing: content-box;
+					height: 1lh;
 					padding-block: .25em;
 					padding-inline-start: .25em;
 					padding-inline-end: .5em;
 					transition: 130ms;
 					cursor: pointer;
 				}
+				option:focus,
 				option:hover {
 					background: #f0f0f0;
 				}
@@ -101,6 +104,12 @@ customElements.define(
 			const shadow = this.attachShadow({ mode: 'open' });
 			shadow.adoptedStyleSheets = [css];
 
+			/** @type {HTMLElement[]} */
+			let selectOptions = [];
+			let hiddenOptions = [];
+			let visibleOptions = [];
+			let currentOption;
+
 			const placeholder = this.getAttribute('placeholder');
 			const presentationElement = document.createElement('nice-presentation');
 			presentationElement.textContent = placeholder || 'Select';
@@ -113,76 +122,90 @@ customElements.define(
 
 			optionListElement.addEventListener('click', (e) => {
 				/** @type {HTMLOptionElement} */
-				const option = e.target;
 
-				if (option?.tagName === 'OPTION') {
-					value = option.value || '';
-
-					for (let option of selectOptions) {
-						option.removeAttribute('selected');
-					}
-
-					option.setAttribute('selected', '');
-
-					if (option?.textContent) {
-						presentationElement.textContent = option?.textContent;
-					}
-					else {
-						presentationElement.innerHTML = '&nbsp;';
-					}
+				if (e.target?.tagName === 'OPTION') {
+					currentOption = e.target;
+					selectCurrrentOption();
 				}
 			});
 
 			shadow.append(presentationElement);
 			shadow.append(dropdownElement);
 
-			if(this.hasAttribute('search')) {
-				const searchInputWrapper = document.createElement('nice-search_wrapper');
-				const searchInput = document.createElement('nice-search');
-				searchInput.contentEditable = 'true';
-				dropdownElement.appendChild(searchInputWrapper);
-				searchInputWrapper.appendChild(searchInput);
 
-				searchInput.addEventListener('input', (e) => {
-					/** @type {HTMLElement} */
-					const input = e.target;
+			const selectCurrrentOption = () => {
+				for (let option of selectOptions) {
+					option.removeAttribute('selected');
+				}
+
+				value = currentOption.value;
+				currentOption.setAttribute('selected', '');
+
+				if (currentOption?.textContent) {
+					presentationElement.textContent = currentOption?.textContent;
+				}
+				else {
+					presentationElement.innerHTML = '&nbsp;';
+				}
+			}
+
+			const toggleSearch = () => {
+				if(this.hasAttribute('data-search')) {
+					this.removeAttribute('tabindex');
+
+					const searchInputWrapper = document.createElement('nice-search_wrapper');
+					const searchInput = document.createElement('nice-search');
+					searchInput.contentEditable = 'true';
+					dropdownElement.insertBefore(searchInputWrapper, dropdownElement.firstChild);
+					searchInputWrapper.appendChild(searchInput);
+
+					searchInput.addEventListener('input', (e) => {
+						/** @type {HTMLElement} */
+						const input = e.target;
+
+						visibleOptions = selectOptions.filter((option) => {
+							return option.textContent?.toLowerCase().includes(input?.textContent?.toLowerCase() ?? '')
+						});
+
+						hiddenOptions = selectOptions.filter((option) => {
+							return !option.textContent?.toLowerCase().includes(input?.textContent?.toLowerCase() ?? '')
+						});
+
+						for (let option of selectOptions) {
+							option.hidden = hiddenOptions.includes(option);
+						}
+					});
+				}
+				else {
+					this.tabIndex = 0;
+					shadow.querySelector('nice-search_wrapper')?.remove();
 
 					for (let option of selectOptions) {
-						option.hidden = !option.textContent?.toLowerCase()
-										.includes(input?.textContent?.toLowerCase())
-						;
+						option.removeAttribute('hidden');
 					}
-				});
+				}
 			}
+			toggleSearch();
 
 			dropdownElement.append(optionListElement);
 
-			/** @type {HTMLElement[]} */
-			let selectOptions = [];
 
 			const addValidNodeToOptions = (node) => {
 				if (!node) return;
-
-				// if (node.nodeName === 'OPTION'
-				// 	&& node.attributes.type?.value === 'radio'
-				// ) {
-				// 	node.name = 'nice';
-				// 	const newOptionElement = document.createElement('label');
-				// 	newOptionElement.innerHTML = node.outerHTML + node.placeholder;
-				// 	shadow.append(newOptionElement);
-				// 	selectOptions.push(newOptionElement);
-				// }
 
 				if (node.nodeName === 'OPTION') {
 					const newOptionElement = node.cloneNode(true);
 
 					if (node.hasAttribute('selected')) {
-						value = newOptionElement.value;
-						presentationElement.textContent = newOptionElement.textContent;
+						currentOption = newOptionElement;
+						selectCurrrentOption();
+					}
 
-						for (let option of selectOptions) {
-							option.removeAttribute('selected');
-						}
+					if (node.hasAttribute('hidden')) {
+						hiddenOptions.push(newOptionElement);
+					}
+					else {
+						visibleOptions.push(newOptionElement);
 					}
 
 					optionListElement.append(newOptionElement);
@@ -198,7 +221,7 @@ customElements.define(
 				}
 			}
 
-			const observerCallback = (records) => {
+			const childListCallback = (records) => {
 				for (const record of records) {
 					for (const node of record.addedNodes) {
 						addValidNodeToOptions(node);
@@ -209,10 +232,15 @@ customElements.define(
 				requestAnimationFrame(calculateMinWidth);
 			}
 
-			const calculateMinWidth = () => {
-				console.log(optionListElement, optionListElement.offsetWidth);
-				console.log(presentationElement, presentationElement.offsetWidth);
+			const attributesCallback = (records) => {
+				for (const record of records) {
+					if (record.attributeName === 'data-search') {
+						toggleSearch();
+					}
+				}
+			}
 
+			const calculateMinWidth = () => {
 				this.style.setProperty('--nice-min-width', Math.max(optionListElement.offsetWidth, presentationElement.offsetWidth) + 'px');
 			}
 			requestAnimationFrame(calculateMinWidth);
@@ -225,8 +253,33 @@ customElements.define(
 				})
 			}
 
-			this.observer = new MutationObserver(observerCallback);
-			this.observer.observe(this, { childList: true });
+			this.childListObserver = new MutationObserver(childListCallback);
+			this.attributesObserver = new MutationObserver(attributesCallback);
+			this.childListObserver.observe(this, { childList: true });
+			this.attributesObserver.observe(this, { attributes: true });
+
+			this.addEventListener('keydown', (e) => {
+				if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+					e.preventDefault();
+
+					let nextOption;
+
+					if (e.key === 'ArrowDown') {
+						nextOption = visibleOptions[visibleOptions.indexOf(currentOption) + 1]
+							?? visibleOptions[0];
+					}
+					else if (e.key === 'ArrowUp') {
+						nextOption = visibleOptions[visibleOptions.indexOf(currentOption) - 1]
+							?? visibleOptions[visibleOptions.length - 1];
+					}
+
+					if (!nextOption) return;
+
+					currentOption = nextOption;
+
+					selectCurrrentOption();
+				}
+			});
 		}
 	}
 );

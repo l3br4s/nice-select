@@ -17,7 +17,6 @@
 	<script src="webcomp.js" defer></script>
 
 	<script>
-
 		function addOption() {
 			var select = document.querySelector('nice-select');
 			var option = document.createElement('option');
@@ -26,7 +25,15 @@
 			select.appendChild(option);
 		}
 	</script>
+
+	<script>
+		function toggleSearch() {
+			var select = document.querySelector('nice-select');
+			select.toggleAttribute('data-search');
+		}
+	</script>
 </head>
+
 <body>
 
 <!--
@@ -41,11 +48,14 @@
 <p>
 	Es war ein schöner Tag für den
 
-	<nice-select search placeholder="Bitte wählen" data-search-placeholder="Suche...">
-		<option value="Keuner" selected>Keuner</option>
+	<nice-select data-search placeholder="Bitte wählen" data-search-placeholder="Suche...">
+		<option value="Keuner">Keuner</option>
 		<option value="Kranz">Kranz</option>
 		<option value="Kanzler" selected>Kanzler</option>
+		<option value="Kandidat" selected>Kandidat</option>
 		<option value=""></option>
+		<option value="">Meute</option>
+		<option value="">Meinung</option>
 		<input type="checkbox" name="bs" value="Kanzler"> Cheklc
 	</nice-select>
 
@@ -56,6 +66,11 @@
 <br>
 <button onclick="addOption()">
 	Click me
+</button>
+<br>
+<br>
+<button onclick="toggleSearch()">
+	Search
 </button>
 <br>
 <br>
