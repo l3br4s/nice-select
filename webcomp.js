@@ -56,15 +56,21 @@ customElements.define(
 					padding-inline-start: .25em;
 					padding-inline-end: .5em;
 					transition: 130ms;
+				}
+				option:not([disabled]) {
 					cursor: pointer;
 				}
-				option:focus,
-				option:hover {
+				option:not([disabled]):focus,
+				option:not([disabled]):hover {
 					background: #f0f0f0;
 				}
 				option[selected] {
 					background: #444;
 					color: white;
+				}
+				option[disabled] {
+					color: inherit;
+					opacity: .5;
 				}
 				nice-search_wrapper {
 					display: block;
@@ -92,7 +98,6 @@ customElements.define(
 					display: none;
 				}
 				nice-search:empty:before {
-					content: '${this.dataset.searchPlaceholder || ''}';
 					position: absolute;
 					opacity: .5;
 				}
@@ -101,16 +106,28 @@ customElements.define(
 				}
 			`);
 
+			let searchPlaceHolderCSS = new CSSStyleSheet();
+			const updateSearchPlaceHolderCSS = () => {
+				searchPlaceHolderCSS.replace(`
+					nice-search:empty:before {
+						content: '${this.dataset.searchPlaceholder || ''}';
+					}
+				`);
+			}
+			updateSearchPlaceHolderCSS();
+
 			const shadow = this.attachShadow({ mode: 'open' });
-			shadow.adoptedStyleSheets = [css];
+			shadow.adoptedStyleSheets = [css, searchPlaceHolderCSS];
 
 			/** @type {HTMLElement[]} */
 			let selectOptions = [];
-			let hiddenOptions = [];
+			let availableOptions = [];
 			let visibleOptions = [];
 			let currentOption;
+			let focusElement;
+			let searchInputElement;
 
-			const placeholder = this.getAttribute('placeholder');
+			let placeholder = this.getAttribute('placeholder');
 			const presentationElement = document.createElement('nice-presentation');
 			presentationElement.textContent = placeholder || 'Select';
 
@@ -121,11 +138,10 @@ customElements.define(
 			const optionListElement = document.createElement('nice-optionlist');
 
 			optionListElement.addEventListener('click', (e) => {
-				/** @type {HTMLOptionElement} */
-
 				if (e.target?.tagName === 'OPTION') {
 					currentOption = e.target;
 					selectCurrrentOption();
+					focusElement?.focus();
 				}
 			});
 
@@ -133,7 +149,15 @@ customElements.define(
 			shadow.append(dropdownElement);
 
 
+			const updateAvailableOptions = () => {
+				availableOptions = visibleOptions.filter((option) => {
+					return !option.hasAttribute('disabled');
+				})
+			}
+
 			const selectCurrrentOption = () => {
+				if (!currentOption || currentOption?.hasAttribute('disabled')) return;
+
 				for (let option of selectOptions) {
 					option.removeAttribute('selected');
 				}
@@ -154,27 +178,24 @@ customElements.define(
 					this.removeAttribute('tabindex');
 
 					const searchInputWrapper = document.createElement('nice-search_wrapper');
-					const searchInput = document.createElement('nice-search');
-					searchInput.contentEditable = 'true';
+					searchInputElement = document.createElement('nice-search');
+					searchInputElement.contentEditable = 'true';
 					dropdownElement.insertBefore(searchInputWrapper, dropdownElement.firstChild);
-					searchInputWrapper.appendChild(searchInput);
+					searchInputWrapper.appendChild(searchInputElement);
 
-					searchInput.addEventListener('input', (e) => {
-						/** @type {HTMLElement} */
-						const input = e.target;
-
+					searchInputElement.addEventListener('input', (e) => {
 						visibleOptions = selectOptions.filter((option) => {
-							return option.textContent?.toLowerCase().includes(input?.textContent?.toLowerCase() ?? '')
+							return option.textContent?.toLowerCase().includes(e.target?.textContent?.toLowerCase() ?? '')
 						});
 
-						hiddenOptions = selectOptions.filter((option) => {
-							return !option.textContent?.toLowerCase().includes(input?.textContent?.toLowerCase() ?? '')
-						});
+						updateAvailableOptions();
 
 						for (let option of selectOptions) {
-							option.hidden = hiddenOptions.includes(option);
+							option.hidden = !visibleOptions.includes(option);
 						}
 					});
+
+					focusElement = searchInputElement;
 				}
 				else {
 					this.tabIndex = 0;
@@ -183,6 +204,8 @@ customElements.define(
 					for (let option of selectOptions) {
 						option.removeAttribute('hidden');
 					}
+
+					focusElement = presentationElement;
 				}
 			}
 			toggleSearch();
@@ -191,26 +214,30 @@ customElements.define(
 
 
 			const addValidNodeToOptions = (node) => {
-				if (!node) return;
+				if (node?.nodeName !== 'OPTION') return;
 
-				if (node.nodeName === 'OPTION') {
-					const newOptionElement = node.cloneNode(true);
+				const newOptionElement = node.cloneNode(true);
 
-					if (node.hasAttribute('selected')) {
+				if (node.hasAttribute('selected')) {
+					if (node.hasAttribute('disabled')) {
+						newOptionElement.removeAttribute('selected');
+					}
+					else {
 						currentOption = newOptionElement;
 						selectCurrrentOption();
 					}
-
-					if (node.hasAttribute('hidden')) {
-						hiddenOptions.push(newOptionElement);
-					}
-					else {
-						visibleOptions.push(newOptionElement);
-					}
-
-					optionListElement.append(newOptionElement);
-					selectOptions.push(newOptionElement);
 				}
+
+				if (!node.hasAttribute('hidden')) {
+					visibleOptions.push(newOptionElement);
+
+					if (!node.hasAttribute('disabled')) {
+						availableOptions.push(newOptionElement);
+					}
+				}
+
+				optionListElement.append(newOptionElement);
+				selectOptions.push(newOptionElement);
 			}
 
 			const removeInvalidNodeFromDOM = (node) => {
@@ -234,8 +261,17 @@ customElements.define(
 
 			const attributesCallback = (records) => {
 				for (const record of records) {
-					if (record.attributeName === 'data-search') {
-						toggleSearch();
+					console.log(record);
+					switch (record.attributeName) {
+						case 'data-search':
+							toggleSearch();
+							break;
+						case 'data-search-placeholder':
+							updateSearchPlaceHolderCSS();
+							break;
+						case 'placeholder':
+							placeholder = record.target.attributes.placeholder.value;
+							presentationElement.textContent = value || placeholder;
 					}
 				}
 			}
@@ -256,21 +292,25 @@ customElements.define(
 			this.childListObserver = new MutationObserver(childListCallback);
 			this.attributesObserver = new MutationObserver(attributesCallback);
 			this.childListObserver.observe(this, { childList: true });
-			this.attributesObserver.observe(this, { attributes: true });
+			this.attributesObserver.observe(this, {
+				attributes: true,
+				attributeFilter: ['data-search', 'data-search-placeholder', 'placeholder']
+			});
 
 			this.addEventListener('keydown', (e) => {
 				if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
 					e.preventDefault();
+					updateAvailableOptions();
 
 					let nextOption;
 
 					if (e.key === 'ArrowDown') {
-						nextOption = visibleOptions[visibleOptions.indexOf(currentOption) + 1]
-							?? visibleOptions[0];
+						nextOption = availableOptions[availableOptions.indexOf(currentOption) + 1]
+							?? availableOptions[0];
 					}
 					else if (e.key === 'ArrowUp') {
-						nextOption = visibleOptions[visibleOptions.indexOf(currentOption) - 1]
-							?? visibleOptions[visibleOptions.length - 1];
+						nextOption = availableOptions[availableOptions.indexOf(currentOption) - 1]
+							?? availableOptions[availableOptions.length - 1];
 					}
 
 					if (!nextOption) return;

@@ -50,9 +50,11 @@
 
 	<nice-select data-search placeholder="Bitte wählen" data-search-placeholder="Suche...">
 		<option value="Keuner">Keuner</option>
-		<option value="Kranz">Kranz</option>
-		<option value="Kanzler" selected>Kanzler</option>
-		<option value="Kandidat" selected>Kandidat</option>
+		<optgroup>
+			<option value="Kranz" selected>Kranz</option>
+			<option value="Kanzler" selected disabled>Kanzler</option>
+		</optgroup>
+		<option value="Kandidat">Kandidat</option>
 		<option value=""></option>
 		<option value="">Meute</option>
 		<option value="">Meinung</option>
