@@ -7,105 +7,6 @@ customElements.define(
 			const minWidth = '8em';
 			const css = new CSSStyleSheet();
 
-			css.replace(`
-				:host, *, *::before, *::after {
-					box-sizing: border-box;
-				}
-				:host {
-					--nice-padding-top: .375em;
-					--nice-padding-bottom: .375em;
-					--nice-padding-start: .625em;
-					--nice-padding-end: .625em;
-					--nice-min-width: ${minWidth};
-					display: inline-block;
-					position: relative;
-					z-index: 1;
-					padding-top: var(--nice-padding-top);
-					padding-bottom: var(--nice-padding-bottom);
-					padding-inline-start: var(--nice-padding-start);
-					padding-inline-end: var(--nice-padding-end);
-					min-width: max(var(--nice-min-width), ${minWidth});
-				}
-				nice-dropdown {
-					display: flex;
-					flex-direction: column;
-					gap: .25em;
-					position: absolute;
-					top: 0;
-					left: 0;
-					right: 0;
-					padding-top: calc(1lh + var(--nice-padding-top) + var(--nice-padding-bottom));
-					padding-bottom: var(--nice-padding-bottom);
-					padding-inline-start: var(--nice-padding-start);
-					padding-inline-end: var(--nice-padding-end);
-					background: white;
-					border: 1px solid;
-					border-radius: .25em;
-					z-index: -1;
-				}
-				nice-optionlist {
-					display: block;
-					overflow-y: scroll;
-					scrollbar-width: thin;
-					padding-inline-end: .3em;
-				}
-				option {
-					box-sizing: content-box;
-					height: 1lh;
-					padding-block: .25em;
-					padding-inline-start: .25em;
-					padding-inline-end: .5em;
-					transition: 130ms;
-				}
-				option:not([disabled]) {
-					cursor: pointer;
-				}
-				option:not([disabled]):focus,
-				option:not([disabled]):hover {
-					background: #f0f0f0;
-				}
-				option[selected] {
-					background: #444;
-					color: white;
-				}
-				option[disabled] {
-					color: inherit;
-					opacity: .5;
-				}
-				nice-search_wrapper {
-					display: block;
-					overflow: hidden;
-					height: calc(1lh + .5em);
-					padding: .25em .5em;
-					border: 1px dotted;
-					border-radius: .25em;
-				}
-				nice-search_wrapper:focus-within {
-					outline: 1px solid
-				}
-				nice-search {
-					display: block;
-					width: 100%;
-					cursor: text;
-					white-space: nowrap;
-					overflow-y: clip;
-					overflow-x: scroll;
-				}
-				nice-search:focus {
-					outline: none;
-				}
-				nice-search br {
-					display: none;
-				}
-				nice-search:empty:before {
-					position: absolute;
-					opacity: .5;
-				}
-				nice-presentation {
-					display: block;
-				}
-			`);
-
 			let searchPlaceHolderCSS = new CSSStyleSheet();
 			const updateSearchPlaceHolderCSS = () => {
 				searchPlaceHolderCSS.replace(`
@@ -213,12 +114,24 @@ customElements.define(
 			dropdownElement.append(optionListElement);
 
 
-			const addValidNodeToOptions = (node) => {
+			const addValidNodeToOptions = (node, parent = optionListElement) => {
+
+				if (node?.nodeName === 'OPTGROUP') {
+					const newOptgroupElement = node.cloneNode();
+					optionListElement.append(newOptgroupElement);
+
+					for (const child of node.children) {
+						addValidNodeToOptions(child, newOptgroupElement);
+					}
+				}
+
 				if (node?.nodeName !== 'OPTION') return;
 
 				const newOptionElement = node.cloneNode(true);
 
 				if (node.hasAttribute('selected')) {
+					console.log(node);
+
 					if (node.hasAttribute('disabled')) {
 						newOptionElement.removeAttribute('selected');
 					}
@@ -236,7 +149,7 @@ customElements.define(
 					}
 				}
 
-				optionListElement.append(newOptionElement);
+				parent.append(newOptionElement);
 				selectOptions.push(newOptionElement);
 			}
 
@@ -320,6 +233,129 @@ customElements.define(
 					selectCurrrentOption();
 				}
 			});
+
+
+			css.replace(`
+				:host, *, *::before, *::after {
+					box-sizing: border-box;
+				}
+				:host {
+					--nice-padding-top: .375em;
+					--nice-padding-bottom: .375em;
+					--nice-padding-start: .625em;
+					--nice-padding-end: .625em;
+					--nice-option-padding-top: .25em;
+					--nice-option-padding-bottom: .25em;
+					--nice-option-padding-start: .25em;
+					--nice-option-padding-end: .5em;
+					--nice-optgroup-label-size: .85;
+					--nice-min-width: ${minWidth};
+					display: inline-block;
+					position: relative;
+					z-index: 1;
+					padding-top: var(--nice-padding-top);
+					padding-bottom: var(--nice-padding-bottom);
+					padding-inline-start: var(--nice-padding-start);
+					padding-inline-end: var(--nice-padding-end);
+					min-width: max(var(--nice-min-width), ${minWidth});
+				}
+				nice-dropdown {
+					display: flex;
+					flex-direction: column;
+					gap: .25em;
+					position: absolute;
+					top: 0;
+					left: 0;
+					right: 0;
+					padding-top: calc(1lh + var(--nice-padding-top) + var(--nice-padding-bottom));
+					padding-bottom: var(--nice-padding-bottom);
+					padding-inline-start: var(--nice-padding-start);
+					padding-inline-end: var(--nice-padding-end);
+					background: white;
+					border: 1px solid;
+					border-radius: .25em;
+					z-index: -1;
+				}
+				nice-optionlist {
+					display: block;
+					overflow-y: scroll;
+					scrollbar-width: thin;
+					padding-inline-end: .3em;
+				}
+				option {
+					box-sizing: content-box;
+					height: 1lh;
+					padding-block: var(--nice-option-padding-top) var(--nice-option-padding-bottom);
+					padding-inline: var(--nice-option-padding-start) var(--nice-option-padding-end);
+					transition: 130ms;
+				}
+				option:not([disabled]) {
+					cursor: pointer;
+				}
+				option:not([disabled], [selected]):focus,
+				option:not([disabled], [selected]):hover {
+					background: #f0f0f0;
+				}
+				option[selected] {
+					background: #444;
+					color: white;
+				}
+				option[disabled] {
+					color: inherit;
+					opacity: .5;
+				}
+				optgroup:not(:first-child) {
+					padding-top: calc(var(--nice-option-padding-top) * 2);
+					border-top: 1px dotted;
+				}
+				optgroup:not(:last-child) {
+					margin-bottom: var(--nice-option-padding-bottom);
+					border-bottom: 1px dotted;
+				}
+				optgroup {
+					font-size: .9em;
+					padding-inline-start: calc(var(--nice-option-padding-start) / 2 / .9);
+				}
+				optgroup [label] {
+					font-size: calc(1em * .85);
+				}
+				optgroup option {
+					font-size: calc(1em / .9);
+					margin-inline-start: 1em;
+				}
+				nice-search_wrapper {
+					display: block;
+					overflow: hidden;
+					height: calc(1lh + .5em);
+					padding: .25em .5em;
+					border: 1px dotted;
+					border-radius: .25em;
+				}
+				nice-search_wrapper:focus-within {
+					outline: 1px solid
+				}
+				nice-search {
+					display: block;
+					width: 100%;
+					cursor: text;
+					white-space: nowrap;
+					overflow-y: clip;
+					overflow-x: scroll;
+				}
+				nice-search:focus {
+					outline: none;
+				}
+				nice-search br {
+					display: none;
+				}
+				nice-search:empty:before {
+					position: absolute;
+					opacity: .5;
+				}
+				nice-presentation {
+					display: block;
+				}
+			`);
 		}
 	}
 );
