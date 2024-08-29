@@ -5,6 +5,7 @@ customElements.define(
 		static formAssociated = true;
 		static observedAttributes = ['data-search', 'data-search-placeholder', 'placeholder'];
 
+
 		constructor() {
 			super();
 			this.internals = this.attachInternals();
@@ -18,17 +19,18 @@ customElements.define(
 			this.presentationElement = document.createElement('nice-presentation');
 			this.presentationElement.textContent = this.placeholder || 'Select';
 
-			this.selectOptions = [];
+			this.allOptions = [];
 			this.availableOptions = [];
 			this.visibleOptions = [];
 
-			this.shadow = this.attachShadow({ mode: 'open' });
+			this.shadow = this.attachShadow({
+				mode: 'open',
+				// delegatesFocus: true
+			});
 
 
 			this.toggleSearch = () => {
-				if(this.hasAttribute('data-search')) {
-					this.removeAttribute('tabindex');
-
+				if(this.searchEnabled) {
 					const searchInputWrapper = document.createElement('nice-search_wrapper');
 					this.searchInputElement = document.createElement('nice-search');
 					this.searchInputElement.contentEditable = 'true';
@@ -36,24 +38,26 @@ customElements.define(
 					searchInputWrapper.appendChild(this.searchInputElement);
 
 					this.searchInputElement.addEventListener('input', (e) => {
-						this.visibleOptions = this.selectOptions.filter((option) => {
+						this.visibleOptions = this.allOptions.filter((option) => {
 							return option.textContent?.toLowerCase().includes(e.target?.textContent?.toLowerCase() ?? '')
 						});
 
 						this.updateAvailableOptions();
 
-						for (let option of this.selectOptions) {
+						for (let option of this.allOptions) {
 							option.hidden = !this.visibleOptions.includes(option);
 						}
 					});
 
 					this.focusElement = this.searchInputElement;
+					this.onfocus = () => {
+						this.searchInputElement.focus();
+					}
 				}
 				else {
-					this.tabIndex = 0;
 					this.shadow.querySelector('nice-search_wrapper')?.remove();
 
-					for (let option of this.selectOptions) {
+					for (let option of this.allOptions) {
 						option.removeAttribute('hidden');
 					}
 
@@ -72,12 +76,22 @@ customElements.define(
 			this.selectCurrrentOption = () => {
 				if (!this.currentOption || this.currentOption?.hasAttribute('disabled')) return;
 
-				for (let option of this.selectOptions) {
+				for (let option of this.allOptions) {
 					option.removeAttribute('selected');
 				}
 
 				this.submitValue = this.currentOption.value;
 				this.internals.setFormValue(this.submitValue || null);
+
+				if (this.submitValue) {
+					this.internals.states.add('valid');
+					this.internals.setValidity({valueMissing: false});
+				}
+				else {
+					this.internals.states.delete('valid');
+					this.internals.setValidity({valueMissing: true}, 'value is empty');
+				}
+
 				this.currentOption.setAttribute('selected', '');
 
 				if (this.currentOption?.textContent) {
@@ -106,12 +120,12 @@ customElements.define(
 			this.searchPlaceHolderCSS = new CSSStyleSheet();
 			this.updateSearchPlaceHolderCSS(this.dataset.searchPlaceholder);
 			this.shadow.adoptedStyleSheets = [css, this.searchPlaceHolderCSS];
-			this.internals.setFormValue('banana');
 
+			this.internals.setValidity({
+				valueMissing: true,
+			}, 'value is empty');
 
-			/** @type {string} */
-			// this.submitValue = this.querySelector('[selected]')?.getAttribute('value') || '';
-			this.internals.setFormValue(this.submitValue);
+			this.tabIndex = 0;
 
 
 			this.optionListElement.addEventListener('click', (e) => {
@@ -141,11 +155,12 @@ customElements.define(
 				}
 
 				if (node?.nodeName !== 'OPTION') return;
+				if (!node?.textContent.trim()) return;
 
 				const newOptionElement = node.cloneNode(true);
 
-				if (node.hasAttribute('selected')) {
-					if (node.hasAttribute('disabled')) {
+				if (newOptionElement.hasAttribute('selected')) {
+					if (newOptionElement.hasAttribute('disabled')) {
 						newOptionElement.removeAttribute('selected');
 					}
 					else {
@@ -154,16 +169,20 @@ customElements.define(
 					}
 				}
 
-				if (!node.hasAttribute('hidden')) {
+				if (!newOptionElement.hasAttribute('hidden')) {
 					this.visibleOptions.push(newOptionElement);
 
-					if (!node.hasAttribute('disabled')) {
+					if (!newOptionElement.hasAttribute('disabled')) {
 						this.availableOptions.push(newOptionElement);
 					}
 				}
 
+				if (!newOptionElement.value) {
+					newOptionElement.value = newOptionElement.textContent;
+				}
+
 				parent?.append(newOptionElement);
-				this.selectOptions.push(newOptionElement);
+				this.allOptions.push(newOptionElement);
 			}
 
 
@@ -360,6 +379,8 @@ customElements.define(
 		attributeChangedCallback(name, oldValue, newValue) {
 			switch (name) {
 				case 'data-search':
+					if (this.searchEnabled && this.hasAttribute('data-search')) return;
+					this.searchEnabled = this.hasAttribute('data-search');
 					this.toggleSearch();
 					break;
 				case 'data-search-placeholder':
@@ -370,7 +391,6 @@ customElements.define(
 					this.presentationElement.textContent = this.submitValue || this.placeholder;
 			}
 		}
-
 
 
 		get open() {
@@ -385,6 +405,16 @@ customElements.define(
 		}
 
 
+		checkValidity() {
+			return this.internals.checkValidity();
+		}
+		reportValidity() {
+			return this.internals.reportValidity();
+		}
+		get validity() {
+			return this.internals.validity;
+		}
+
 
 		get value() {
 			return this.currentOption?.value || null;
@@ -398,6 +428,12 @@ customElements.define(
 
 			this.currentOption = option;
 			this.selectCurrrentOption();
+		}
+
+
+
+		discconnectCallback() {
+			console.log('disconnect');
 		}
 	}
 );

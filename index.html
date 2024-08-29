@@ -12,9 +12,20 @@
 		/* nice-select {
 			min-width: 0;
 		} */
+		option {
+			color:red;
+		}
+
+		nice-select:not(:valid) {
+			outline: 2px solid red;
+		}
+		nice-select:valid {
+			outline: 2px solid yellowgreen;
+		}
+
 	</style>
 
-	<script src="webcomp.js"></script>
+	<script src="webcomp.js" defer></script>
 
 	<script>
 		function addOption() {
@@ -33,46 +44,45 @@
 
 
 		function logFormData() {
-			const data = new FormData(document.querySelector('form'));
+			const form = document.querySelector('form');
+
+			const data = new FormData(form);
 			for (let entry of data.entries()) {
 				console.log(entry);
 			}
+
+			console.log(form.checkValidity());
+
+			form.requestSubmit();
 		}
 	</script>
 </head>
 
 <body>
 
-<!--
-<nice-select search>
-	<input type="radio" name="bdfds" value="Keuner" placeholder="Keuner"> Keuner
-	<input type="radio" name="bs" value="Kranz" placeholder="Kranz"> Kranz
-	<input type="radio" value="Kanzler" placeholder="Kanzler"> Kanzler
-	<input type="checkbox" name="bs" value="Kanzler"> Cheklc
-	<p><b>Sehr geehrte Damen und Herren,</b></p>
-</nice-select> -->
-
-<form>
+<form action="/">
 	<p>
 		Es war ein schöner Tag für den
 
-		<nice-select name="nice" data-search placeholder="Bitte wählen" data-search-placeholder="Suche...">
+		<nice-select name="nice" data-search placeholder="Bitte wählen" data-search-placeholder="Suche..." required>
 			<option value="Keuner">Keuner</option>
 			<optgroup label="Ums Eck">
 				<option value="Kranz">Kranz</option>
-				<option value="Kanzler" selected disabled>Kanzler</option>
+				<option value="Kanzler" disabled>Kanzler</option>
 			</optgroup>
 			<option value="Kandidat">Kandidat</option>
-			<option value=""></option>
-			<option value="Meute" selected>Meute</option>
-			<option value="">Meinung</option>
+			<option value="nix">
+				<style></style>
+			</option>
+			<option value="Meute">Meute</option>
+			<option value="" style="color:green">Meinung</option>
 			<input type="checkbox" name="bs" value="Kanzler"> Cheklc
 		</nice-select>
 
 		in Stralsund.
 	</p>
 
-	<input type="text" name="text1" id="" value="nix1"><br>
+	<input type="text" name="text1" id="" value=""><br>
 	<input type="text" name="text2" id="" value="nix2"><br>
 
 	<button type="button" onclick="logFormData()">Submit</button>
@@ -113,7 +123,7 @@
 <script>
 	const nice = document.querySelector('nice-select');
 
-	nice.value = 'Keuner';
+	// console.log('validity', nice.checkValidity(), nice.validity);
 </script>
 
 </body>
