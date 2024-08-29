@@ -3,7 +3,7 @@ customElements.define(
 	'nice-select',
 	class extends HTMLElement {
 		static formAssociated = true;
-		static observedAttributes = ['data-search', 'data-search-placeholder', 'placeholder'];
+		static observedAttributes = ['data-search', 'data-search-placeholder', 'placeholder', 'disabled'];
 
 
 		constructor() {
@@ -30,6 +30,9 @@ customElements.define(
 
 
 			this.toggleSearch = () => {
+				if (this.searchEnabled && this.hasAttribute('data-search')) return;
+				this.searchEnabled = this.hasAttribute('data-search');
+
 				if(this.searchEnabled) {
 					const searchInputWrapper = document.createElement('nice-search_wrapper');
 					this.searchInputElement = document.createElement('nice-search');
@@ -110,6 +113,18 @@ customElements.define(
 					}
 				`);
 			}
+
+
+			this.toggleDisabled = () => {
+				if (this.hasAttribute('disabled')) {
+					this.presentationElement.setAttribute('inert', '');
+					this.dropdownElement?.setAttribute('inert', '');
+				}
+				else {
+					this.presentationElement.removeAttribute('inert');
+					this.dropdownElement?.removeAttribute('inert');
+				}
+			}
 		}
 
 
@@ -126,7 +141,6 @@ customElements.define(
 			}, 'value is empty');
 
 			this.tabIndex = 0;
-
 
 			this.optionListElement.addEventListener('click', (e) => {
 				if (e.target?.tagName === 'OPTION') {
@@ -251,6 +265,10 @@ customElements.define(
 			});
 
 
+			// this.toggleDisabled();
+			// this.toggleSearch();
+
+
 			css.replace(`
 				:host, *, *::before, *::after {
 					box-sizing: border-box;
@@ -274,6 +292,10 @@ customElements.define(
 					padding-inline-start: var(--nice-padding-start);
 					padding-inline-end: var(--nice-padding-end);
 					min-width: max(var(--nice-min-width), ${minWidth});
+				}
+				:host[disabled] {
+					color: gray;
+					cursor: not-allowed;
 				}
 				nice-dropdown {
 					display: flex;
@@ -355,7 +377,9 @@ customElements.define(
 					width: 100%;
 					cursor: text;
 					white-space: nowrap;
-					overflow-y: clip;
+					overflow: clip;
+				}
+				nice-dropdown:not([inert]) nice-search {
 					overflow-x: scroll;
 				}
 				nice-search:focus {
@@ -379,8 +403,6 @@ customElements.define(
 		attributeChangedCallback(name, oldValue, newValue) {
 			switch (name) {
 				case 'data-search':
-					if (this.searchEnabled && this.hasAttribute('data-search')) return;
-					this.searchEnabled = this.hasAttribute('data-search');
 					this.toggleSearch();
 					break;
 				case 'data-search-placeholder':
@@ -389,6 +411,10 @@ customElements.define(
 				case 'placeholder':
 					this.placeholder = newValue;
 					this.presentationElement.textContent = this.submitValue || this.placeholder;
+					break;
+				case 'disabled':
+					this.toggleDisabled();
+					break;
 			}
 		}
 
