@@ -2,123 +2,138 @@
 customElements.define(
 	'nice-select',
 	class extends HTMLElement {
+		static formAssociated = true;
+		static observedAttributes = ['data-search', 'data-search-placeholder', 'placeholder'];
 
-		connectedCallback() {
-			const minWidth = '8em';
-			const css = new CSSStyleSheet();
+		constructor() {
+			super();
+			this.internals = this.attachInternals();
 
-			let searchPlaceHolderCSS = new CSSStyleSheet();
-			const updateSearchPlaceHolderCSS = () => {
-				searchPlaceHolderCSS.replace(`
-					nice-search:empty:before {
-						content: '${this.dataset.searchPlaceholder || ''}';
-					}
-				`);
-			}
-			updateSearchPlaceHolderCSS();
+			this.dropdownElement = document.createElement('nice-dropdown');
+			this.optionListElement = document.createElement('nice-optionlist');
+			this.focusElement;
+			this.searchInputElement;
 
-			const shadow = this.attachShadow({ mode: 'open' });
-			shadow.adoptedStyleSheets = [css, searchPlaceHolderCSS];
+			this.placeholder = this.getAttribute('placeholder');
+			this.presentationElement = document.createElement('nice-presentation');
+			this.presentationElement.textContent = this.placeholder || 'Select';
 
-			/** @type {HTMLElement[]} */
-			let selectOptions = [];
-			let availableOptions = [];
-			let visibleOptions = [];
-			let currentOption;
-			let focusElement;
-			let searchInputElement;
+			this.selectOptions = [];
+			this.availableOptions = [];
+			this.visibleOptions = [];
 
-			let placeholder = this.getAttribute('placeholder');
-			const presentationElement = document.createElement('nice-presentation');
-			presentationElement.textContent = placeholder || 'Select';
-
-			/** @type {string} */
-			let value = this.querySelector('[selected]')?.getAttribute('value') || '';
-
-			const dropdownElement = document.createElement('nice-dropdown');
-			const optionListElement = document.createElement('nice-optionlist');
-
-			optionListElement.addEventListener('click', (e) => {
-				if (e.target?.tagName === 'OPTION') {
-					currentOption = e.target;
-					selectCurrrentOption();
-					focusElement?.focus();
-				}
-			});
-
-			shadow.append(presentationElement);
-			shadow.append(dropdownElement);
+			this.shadow = this.attachShadow({ mode: 'open' });
 
 
-			const updateAvailableOptions = () => {
-				availableOptions = visibleOptions.filter((option) => {
-					return !option.hasAttribute('disabled');
-				})
-			}
-
-			const selectCurrrentOption = () => {
-				if (!currentOption || currentOption?.hasAttribute('disabled')) return;
-
-				for (let option of selectOptions) {
-					option.removeAttribute('selected');
-				}
-
-				value = currentOption.value;
-				currentOption.setAttribute('selected', '');
-
-				if (currentOption?.textContent) {
-					presentationElement.textContent = currentOption?.textContent;
-				}
-				else {
-					presentationElement.innerHTML = '&nbsp;';
-				}
-			}
-
-			const toggleSearch = () => {
+			this.toggleSearch = () => {
 				if(this.hasAttribute('data-search')) {
 					this.removeAttribute('tabindex');
 
 					const searchInputWrapper = document.createElement('nice-search_wrapper');
-					searchInputElement = document.createElement('nice-search');
-					searchInputElement.contentEditable = 'true';
-					dropdownElement.insertBefore(searchInputWrapper, dropdownElement.firstChild);
-					searchInputWrapper.appendChild(searchInputElement);
+					this.searchInputElement = document.createElement('nice-search');
+					this.searchInputElement.contentEditable = 'true';
+					this.dropdownElement?.insertBefore(searchInputWrapper, this.dropdownElement.firstChild);
+					searchInputWrapper.appendChild(this.searchInputElement);
 
-					searchInputElement.addEventListener('input', (e) => {
-						visibleOptions = selectOptions.filter((option) => {
+					this.searchInputElement.addEventListener('input', (e) => {
+						this.visibleOptions = this.selectOptions.filter((option) => {
 							return option.textContent?.toLowerCase().includes(e.target?.textContent?.toLowerCase() ?? '')
 						});
 
-						updateAvailableOptions();
+						this.updateAvailableOptions();
 
-						for (let option of selectOptions) {
-							option.hidden = !visibleOptions.includes(option);
+						for (let option of this.selectOptions) {
+							option.hidden = !this.visibleOptions.includes(option);
 						}
 					});
 
-					focusElement = searchInputElement;
+					this.focusElement = this.searchInputElement;
 				}
 				else {
 					this.tabIndex = 0;
-					shadow.querySelector('nice-search_wrapper')?.remove();
+					this.shadow.querySelector('nice-search_wrapper')?.remove();
 
-					for (let option of selectOptions) {
+					for (let option of this.selectOptions) {
 						option.removeAttribute('hidden');
 					}
 
-					focusElement = presentationElement;
+					this.focusElement = this.presentationElement;
 				}
 			}
-			toggleSearch();
-
-			dropdownElement.append(optionListElement);
 
 
-			const addValidNodeToOptions = (node, parent = optionListElement) => {
+			this.updateAvailableOptions = () => {
+				this.availableOptions = this.visibleOptions.filter((option) => {
+					return !option.hasAttribute('disabled');
+				})
+			}
 
+
+			this.selectCurrrentOption = () => {
+				if (!this.currentOption || this.currentOption?.hasAttribute('disabled')) return;
+
+				for (let option of this.selectOptions) {
+					option.removeAttribute('selected');
+				}
+
+				this.submitValue = this.currentOption.value;
+				this.internals.setFormValue(this.submitValue || null);
+				this.currentOption.setAttribute('selected', '');
+
+				if (this.currentOption?.textContent) {
+					this.presentationElement.textContent = this.currentOption?.textContent;
+				}
+				else {
+					this.presentationElement.innerHTML = '&nbsp;';
+				}
+			}
+
+
+			this.updateSearchPlaceHolderCSS = (placeholder) => {
+				this.searchPlaceHolderCSS?.replace(`
+					nice-search:empty:before {
+						content: '${placeholder || ''}';
+					}
+				`);
+			}
+		}
+
+
+
+		connectedCallback() {
+			const minWidth = '8em';
+			const css = new CSSStyleSheet();
+			this.searchPlaceHolderCSS = new CSSStyleSheet();
+			this.updateSearchPlaceHolderCSS(this.dataset.searchPlaceholder);
+			this.shadow.adoptedStyleSheets = [css, this.searchPlaceHolderCSS];
+			this.internals.setFormValue('banana');
+
+
+			/** @type {string} */
+			// this.submitValue = this.querySelector('[selected]')?.getAttribute('value') || '';
+			this.internals.setFormValue(this.submitValue);
+
+
+			this.optionListElement.addEventListener('click', (e) => {
+				if (e.target?.tagName === 'OPTION') {
+					this.currentOption = e.target;
+					this.selectCurrrentOption();
+					this.focusElement?.focus();
+				}
+			});
+
+
+			this.shadow.append(this.presentationElement);
+			this.shadow.append(this.dropdownElement);
+
+
+			this.dropdownElement.append(this.optionListElement);
+
+
+			const addValidNodeToOptions = (node, parent = this.optionListElement) => {
 				if (node?.nodeName === 'OPTGROUP') {
 					const newOptgroupElement = node.cloneNode();
-					optionListElement.append(newOptgroupElement);
+					this.optionListElement?.append(newOptgroupElement);
 
 					for (const child of node.children) {
 						addValidNodeToOptions(child, newOptgroupElement);
@@ -130,28 +145,27 @@ customElements.define(
 				const newOptionElement = node.cloneNode(true);
 
 				if (node.hasAttribute('selected')) {
-					console.log(node);
-
 					if (node.hasAttribute('disabled')) {
 						newOptionElement.removeAttribute('selected');
 					}
 					else {
-						currentOption = newOptionElement;
-						selectCurrrentOption();
+						this.currentOption = newOptionElement;
+						this.selectCurrrentOption();
 					}
 				}
 
 				if (!node.hasAttribute('hidden')) {
-					visibleOptions.push(newOptionElement);
+					this.visibleOptions.push(newOptionElement);
 
 					if (!node.hasAttribute('disabled')) {
-						availableOptions.push(newOptionElement);
+						this.availableOptions.push(newOptionElement);
 					}
 				}
 
-				parent.append(newOptionElement);
-				selectOptions.push(newOptionElement);
+				parent?.append(newOptionElement);
+				this.selectOptions.push(newOptionElement);
 			}
+
 
 			const removeInvalidNodeFromDOM = (node) => {
 				if (!node) return;
@@ -160,6 +174,7 @@ customElements.define(
 					node.remove();
 				}
 			}
+
 
 			const childListCallback = (records) => {
 				for (const record of records) {
@@ -172,27 +187,12 @@ customElements.define(
 				requestAnimationFrame(calculateMinWidth);
 			}
 
-			const attributesCallback = (records) => {
-				for (const record of records) {
-					console.log(record);
-					switch (record.attributeName) {
-						case 'data-search':
-							toggleSearch();
-							break;
-						case 'data-search-placeholder':
-							updateSearchPlaceHolderCSS();
-							break;
-						case 'placeholder':
-							placeholder = record.target.attributes.placeholder.value;
-							presentationElement.textContent = value || placeholder;
-					}
-				}
-			}
 
 			const calculateMinWidth = () => {
-				this.style.setProperty('--nice-min-width', Math.max(optionListElement.offsetWidth, presentationElement.offsetWidth) + 'px');
+				this.style.setProperty('--nice-min-width', Math.max(this.optionListElement?.offsetWidth ?? 0, this.presentationElement?.offsetWidth ?? 0) + 'px');
 			}
 			requestAnimationFrame(calculateMinWidth);
+
 
 			for (let node of this.childNodes) {
 				addValidNodeToOptions(node);
@@ -202,35 +202,32 @@ customElements.define(
 				})
 			}
 
+
 			this.childListObserver = new MutationObserver(childListCallback);
-			this.attributesObserver = new MutationObserver(attributesCallback);
 			this.childListObserver.observe(this, { childList: true });
-			this.attributesObserver.observe(this, {
-				attributes: true,
-				attributeFilter: ['data-search', 'data-search-placeholder', 'placeholder']
-			});
+
 
 			this.addEventListener('keydown', (e) => {
 				if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
 					e.preventDefault();
-					updateAvailableOptions();
+					this.updateAvailableOptions();
 
 					let nextOption;
 
 					if (e.key === 'ArrowDown') {
-						nextOption = availableOptions[availableOptions.indexOf(currentOption) + 1]
-							?? availableOptions[0];
+						nextOption = this.availableOptions[this.availableOptions.indexOf(this.currentOption) + 1]
+							?? this.availableOptions[0];
 					}
 					else if (e.key === 'ArrowUp') {
-						nextOption = availableOptions[availableOptions.indexOf(currentOption) - 1]
-							?? availableOptions[availableOptions.length - 1];
+						nextOption = this.availableOptions[this.availableOptions.indexOf(this.currentOption) - 1]
+							?? this.availableOptions[this.availableOptions.length - 1];
 					}
 
 					if (!nextOption) return;
 
-					currentOption = nextOption;
+					this.currentOption = nextOption;
 
-					selectCurrrentOption();
+					this.selectCurrrentOption();
 				}
 			});
 
@@ -356,6 +353,51 @@ customElements.define(
 					display: block;
 				}
 			`);
+		}
+
+
+
+		attributeChangedCallback(name, oldValue, newValue) {
+			switch (name) {
+				case 'data-search':
+					this.toggleSearch();
+					break;
+				case 'data-search-placeholder':
+					this.updateSearchPlaceHolderCSS(newValue);
+					break;
+				case 'placeholder':
+					this.placeholder = newValue;
+					this.presentationElement.textContent = this.submitValue || this.placeholder;
+			}
+		}
+
+
+
+		get open() {
+			return this.internals.states.has('open');
+		}
+		set open(value) {
+			if (value) {
+				this.internals.states.add('open');
+			} else {
+				this.internals.states.delete('open');
+			}
+		}
+
+
+
+		get value() {
+			return this.currentOption?.value || null;
+		}
+		set value(value) {
+			const option = this.availableOptions.find((option) => option.value === value);
+
+			if (!option) {
+				throw new Error(`'${value}' is not a valid option.`);
+			}
+
+			this.currentOption = option;
+			this.selectCurrrentOption();
 		}
 	}
 );

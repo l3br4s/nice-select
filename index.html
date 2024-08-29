@@ -14,7 +14,7 @@
 		} */
 	</style>
 
-	<script src="webcomp.js" defer></script>
+	<script src="webcomp.js"></script>
 
 	<script>
 		function addOption() {
@@ -24,12 +24,19 @@
 			option.value = 'test';
 			select.appendChild(option);
 		}
-	</script>
 
-	<script>
+
 		function toggleSearch() {
 			var select = document.querySelector('nice-select');
 			select.toggleAttribute('data-search');
+		}
+
+
+		function logFormData() {
+			const data = new FormData(document.querySelector('form'));
+			for (let entry of data.entries()) {
+				console.log(entry);
+			}
 		}
 	</script>
 </head>
@@ -45,24 +52,32 @@
 	<p><b>Sehr geehrte Damen und Herren,</b></p>
 </nice-select> -->
 
-<p>
-	Es war ein schöner Tag für den
+<form>
+	<p>
+		Es war ein schöner Tag für den
 
-	<nice-select data-search placeholder="Bitte wählen" data-search-placeholder="Suche...">
-		<option value="Keuner">Keuner</option>
-		<optgroup label="Ums Eck">
-			<option value="Kranz" selected>Kranz</option>
-			<option value="Kanzler" selected disabled>Kanzler</option>
-		</optgroup>
-		<option value="Kandidat" selected>Kandidat</option>
-		<option value=""></option>
-		<option value="" selected>Meute</option>
-		<option value="">Meinung</option>
-		<input type="checkbox" name="bs" value="Kanzler"> Cheklc
-	</nice-select>
+		<nice-select name="nice" data-search placeholder="Bitte wählen" data-search-placeholder="Suche...">
+			<option value="Keuner">Keuner</option>
+			<optgroup label="Ums Eck">
+				<option value="Kranz">Kranz</option>
+				<option value="Kanzler" selected disabled>Kanzler</option>
+			</optgroup>
+			<option value="Kandidat">Kandidat</option>
+			<option value=""></option>
+			<option value="Meute" selected>Meute</option>
+			<option value="">Meinung</option>
+			<input type="checkbox" name="bs" value="Kanzler"> Cheklc
+		</nice-select>
 
-	in Stralsund.
-</p>
+		in Stralsund.
+	</p>
+
+	<input type="text" name="text1" id="" value="nix1"><br>
+	<input type="text" name="text2" id="" value="nix2"><br>
+
+	<button type="button" onclick="logFormData()">Submit</button>
+</form>
+
 
 
 <br>
@@ -94,6 +109,12 @@
 </select>
 
 
+
+<script>
+	const nice = document.querySelector('nice-select');
+
+	nice.value = 'Keuner';
+</script>
 
 </body>
 </html>
