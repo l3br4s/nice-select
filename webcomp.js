@@ -11,9 +11,12 @@ customElements.define(
 			this.internals = this.attachInternals();
 
 			this.dropdownElement = document.createElement('nice-dropdown');
+			const dropdownInner = document.createElement('nice-dropdown-inner');
+			this.dropdownPadding = document.createElement('nice-dropdown-padding');
+			this.dropdownElement.append(dropdownInner);
+			dropdownInner.append(this.dropdownPadding);
 			this.optionListElement = document.createElement('nice-optionlist');
 			this.focusElement;
-			this.searchInputElement;
 
 			this.placeholder = this.getAttribute('placeholder');
 			this.presentationElement = document.createElement('nice-presentation');
@@ -40,7 +43,7 @@ customElements.define(
 					this.searchInputElement = document.createElement('nice-search');
 					this.searchInputElement.setAttribute('part', 'nice-search');
 					this.searchInputElement.contentEditable = 'true';
-					this.dropdownElement?.insertBefore(searchInputWrapper, this.dropdownElement.firstChild);
+					this.dropdownPadding?.insertBefore(searchInputWrapper, this.dropdownPadding.firstChild);
 					searchInputWrapper.appendChild(this.searchInputElement);
 
 					this.searchInputElement.addEventListener('input', (e) => {
@@ -53,6 +56,10 @@ customElements.define(
 						for (let option of this.allOptions) {
 							option.hidden = !this.visibleOptions.includes(option);
 						}
+
+						for (let optgroup of this.optionListElement.querySelectorAll('nice-optgroup')) {
+							optgroup.hidden = optgroup.querySelector('option:not([hidden])') ? false : true;
+						}
 					});
 
 					this.focusElement = this.searchInputElement;
@@ -61,7 +68,7 @@ customElements.define(
 					}
 				}
 				else {
-					this.shadow.querySelector('nice-search_wrapper')?.remove();
+					this.shadow.querySelector('nice-search-wrapper')?.remove();
 
 					for (let option of this.allOptions) {
 						option.removeAttribute('hidden');
@@ -130,7 +137,18 @@ customElements.define(
 					this.dropdownElement?.removeAttribute('inert');
 				}
 			}
-		}
+
+
+			this.openListener = (e) => {
+				if (!this.contains(e.target)) {
+					this.internals.states.delete('open');
+				}
+				else {
+					this.internals.states.add('open');
+				}
+			}
+		} // constructor
+
 
 
 
@@ -150,7 +168,7 @@ customElements.define(
 			this.shadow.append(this.presentationElement);
 			this.shadow.append(this.dropdownElement);
 
-			this.dropdownElement.append(this.optionListElement);
+			this.dropdownPadding.append(this.optionListElement);
 
 
 			const addValidNodeToOptions = (node, parent = this.optionListElement) => {
@@ -205,7 +223,6 @@ customElements.define(
 				if (!node) return;
 
 				if (node.nodeName !== 'OPTION' && node.nodeName !== 'OPTGROUP') {
-					console.log(node);
 					node.remove();
 				}
 			}
@@ -276,13 +293,18 @@ customElements.define(
 					this.selectCurrrentOption();
 
 					this.internals.states.add('interacted');
+					this.internals.states.add('open');
 				}
 			});
+
+
+			document.addEventListener('click', this.openListener);
 
 
 			css.replace(`
 				:host, *, *::before, *::after {
 					box-sizing: border-box;
+					position: relative;
 				}
 				:host {
 					--nice-padding-top: .375em;
@@ -295,8 +317,8 @@ customElements.define(
 					--nice-option-padding-end: .5em;
 					--nice-optgroup-label-size: .85;
 					--nice-min-width: ${minWidth};
+					--nice-max-height: 15lh;
 					display: inline-block;
-					position: relative;
 					z-index: 1;
 					padding-top: var(--nice-padding-top);
 					padding-bottom: var(--nice-padding-bottom);
@@ -309,25 +331,38 @@ customElements.define(
 					cursor: not-allowed;
 				}
 				nice-dropdown {
-					display: flex;
-					flex-direction: column;
-					gap: .25em;
 					position: absolute;
 					top: 0;
 					left: 0;
 					right: 0;
-					padding-top: calc(1lh + var(--nice-padding-top) + var(--nice-padding-bottom));
+					z-index: -1;
+					padding-top: calc(1lh + var(--nice-padding-top) + var(--nice-padding-bottom) /2);
+					border: 1px solid;
+					border-radius: .25em;
+					background: white;
+					overflow: hidden;
+					overflow: hidden;
+					transition: 1500ms;
+				}
+				nice-dropdown-inner {
+				}
+				:host(:focus-within),
+				:host(:state(open)) {
+					nice-dropdown {
+					}
+				}
+				nice-dropdown-padding {
+					display: flex;
+					flex-direction: column;
+					gap: .25em;
 					padding-bottom: var(--nice-padding-bottom);
 					padding-inline-start: var(--nice-padding-start);
 					padding-inline-end: var(--nice-padding-end);
-					background: white;
-					border: 1px solid;
-					border-radius: .25em;
-					z-index: -1;
 				}
 				nice-optionlist {
 					display: block;
-					overflow-y: scroll;
+					max-height: var(--nice-max-height);
+					overflow-y: auto;
 					scrollbar-width: thin;
 					padding-inline-end: .3em;
 				}
@@ -368,6 +403,9 @@ customElements.define(
 						margin-bottom: var(--nice-option-padding-bottom);
 						border-bottom: 1px dotted;
 					}
+					&[hidden] {
+						display: none;
+					}
 					option {
 						margin-inline-start: var(--nice-option-padding-start);
 
@@ -390,7 +428,7 @@ customElements.define(
 					border-radius: .25em;
 
 					&:focus-within {
-						outline: 1px solid
+						outline: 1px solid;
 					}
 				}
 				nice-search {
@@ -407,7 +445,7 @@ customElements.define(
 						position: absolute;
 						opacity: .5;
 					}
-					br {
+					div, br {
 						display: none;
 					}
 					nice-dropdown:not([inert]) & {
@@ -416,9 +454,11 @@ customElements.define(
 				}
 				nice-presentation {
 					display: block;
+					cursor: pointer;
 				}
 			`);
-		}
+		} // connectedCallback
+
 
 
 
@@ -438,7 +478,8 @@ customElements.define(
 					this.toggleDisabled();
 					break;
 			}
-		}
+		} // attributeChangedCallback
+
 
 
 		get interacted() {
@@ -486,6 +527,7 @@ customElements.define(
 
 
 		discconnectCallback() {
+			document.removeEventListener('click', this.openListener);
 			console.log('disconnect');
 		}
 	}
