@@ -28,14 +28,17 @@ customElements.define(
 				// delegatesFocus: true
 			});
 
+			this.change = new Event('change');
+
 
 			this.toggleSearch = () => {
 				if (this.searchEnabled && this.hasAttribute('data-search')) return;
 				this.searchEnabled = this.hasAttribute('data-search');
 
 				if(this.searchEnabled) {
-					const searchInputWrapper = document.createElement('nice-search_wrapper');
+					const searchInputWrapper = document.createElement('nice-search-wrapper');
 					this.searchInputElement = document.createElement('nice-search');
+					this.searchInputElement.setAttribute('part', 'nice-search');
 					this.searchInputElement.contentEditable = 'true';
 					this.dropdownElement?.insertBefore(searchInputWrapper, this.dropdownElement.firstChild);
 					searchInputWrapper.appendChild(this.searchInputElement);
@@ -103,6 +106,8 @@ customElements.define(
 				else {
 					this.presentationElement.innerHTML = '&nbsp;';
 				}
+
+				this.dispatchEvent(this.change);
 			}
 
 
@@ -142,25 +147,20 @@ customElements.define(
 
 			this.tabIndex = 0;
 
-			this.optionListElement.addEventListener('click', (e) => {
-				if (e.target?.tagName === 'OPTION') {
-					this.currentOption = e.target;
-					this.selectCurrrentOption();
-					this.focusElement?.focus();
-				}
-			});
-
-
 			this.shadow.append(this.presentationElement);
 			this.shadow.append(this.dropdownElement);
-
 
 			this.dropdownElement.append(this.optionListElement);
 
 
 			const addValidNodeToOptions = (node, parent = this.optionListElement) => {
 				if (node?.nodeName === 'OPTGROUP') {
-					const newOptgroupElement = node.cloneNode();
+					const newOptgroupElement = document.createElement('nice-optgroup');
+					const newOptgroupLabel = document.createElement('nice-optgroup-label');
+					newOptgroupLabel.textContent = node.getAttribute('label');
+					newOptgroupElement.appendChild(newOptgroupLabel);
+					newOptgroupElement.setAttribute('part', 'nice-optgroup');
+
 					this.optionListElement?.append(newOptgroupElement);
 
 					for (const child of node.children) {
@@ -172,6 +172,7 @@ customElements.define(
 				if (!node?.textContent.trim()) return;
 
 				const newOptionElement = node.cloneNode(true);
+				newOptionElement.setAttribute('part', 'option');
 
 				if (newOptionElement.hasAttribute('selected')) {
 					if (newOptionElement.hasAttribute('disabled')) {
@@ -203,7 +204,8 @@ customElements.define(
 			const removeInvalidNodeFromDOM = (node) => {
 				if (!node) return;
 
-				if (node.nodeName !== 'OPTION') {
+				if (node.nodeName !== 'OPTION' && node.nodeName !== 'OPTGROUP') {
+					console.log(node);
 					node.remove();
 				}
 			}
@@ -240,6 +242,17 @@ customElements.define(
 			this.childListObserver.observe(this, { childList: true });
 
 
+			this.optionListElement.addEventListener('click', (e) => {
+				if (e.target?.tagName !== 'OPTION' || this.currentOption === e.target) return;
+
+				this.currentOption = e.target;
+				this.selectCurrrentOption();
+				this.focusElement?.focus();
+
+				this.internals.states.add('interacted');
+			});
+
+
 			this.addEventListener('keydown', (e) => {
 				if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
 					e.preventDefault();
@@ -261,12 +274,10 @@ customElements.define(
 					this.currentOption = nextOption;
 
 					this.selectCurrrentOption();
+
+					this.internals.states.add('interacted');
 				}
 			});
-
-
-			// this.toggleDisabled();
-			// this.toggleSearch();
 
 
 			css.replace(`
@@ -279,7 +290,7 @@ customElements.define(
 					--nice-padding-start: .625em;
 					--nice-padding-end: .625em;
 					--nice-option-padding-top: .25em;
-					--nice-option-padding-bottom: .25em;
+					--nice-option-padding-bottom: .15em;
 					--nice-option-padding-start: .25em;
 					--nice-option-padding-end: .5em;
 					--nice-optgroup-label-size: .85;
@@ -293,7 +304,7 @@ customElements.define(
 					padding-inline-end: var(--nice-padding-end);
 					min-width: max(var(--nice-min-width), ${minWidth});
 				}
-				:host[disabled] {
+				:host([disabled]) {
 					color: gray;
 					cursor: not-allowed;
 				}
@@ -326,51 +337,61 @@ customElements.define(
 					padding-block: var(--nice-option-padding-top) var(--nice-option-padding-bottom);
 					padding-inline: var(--nice-option-padding-start) var(--nice-option-padding-end);
 					transition: 130ms;
+
+					&[selected] {
+						background: #444;
+						color: white;
+					}
+					&[disabled] {
+						color: inherit;
+						opacity: .5;
+					}
+					&:not([disabled]) {
+						cursor: pointer;
+					}
+					&:not([disabled], [selected]):focus,
+					&:not([disabled], [selected]):hover {
+						background: #f0f0f0;
+					}
 				}
-				option:not([disabled]) {
-					cursor: pointer;
+				nice-optgroup {
+					display: block;
+					padding-inline-start: var(--nice-option-padding-start);
+
+					&:not(:first-child) {
+						padding-top: calc(var(--nice-option-padding-top) * 2);
+						padding-bottom: var(--nice-option-padding-bottom);
+						margin-top: var(--nice-option-padding-top);
+						border-top: 1px dotted;
+					}
+					&:not(:last-child) {
+						margin-bottom: var(--nice-option-padding-bottom);
+						border-bottom: 1px dotted;
+					}
+					option {
+						margin-inline-start: var(--nice-option-padding-start);
+
+						&:first-of-type {
+							margin-top: var(--nice-option-padding-top);
+						}
+					}
 				}
-				option:not([disabled], [selected]):focus,
-				option:not([disabled], [selected]):hover {
-					background: #f0f0f0;
+				nice-optgroup-label {
+					display: block;
+					font-size: 90%;
+					font-weight: bold;
 				}
-				option[selected] {
-					background: #444;
-					color: white;
-				}
-				option[disabled] {
-					color: inherit;
-					opacity: .5;
-				}
-				optgroup:not(:first-child) {
-					padding-top: calc(var(--nice-option-padding-top) * 2);
-					border-top: 1px dotted;
-				}
-				optgroup:not(:last-child) {
-					margin-bottom: var(--nice-option-padding-bottom);
-					border-bottom: 1px dotted;
-				}
-				optgroup {
-					font-size: .9em;
-					padding-inline-start: calc(var(--nice-option-padding-start) / 2 / .9);
-				}
-				optgroup [label] {
-					font-size: calc(1em * .85);
-				}
-				optgroup option {
-					font-size: calc(1em / .9);
-					margin-inline-start: 1em;
-				}
-				nice-search_wrapper {
+				nice-search-wrapper {
 					display: block;
 					overflow: hidden;
 					height: calc(1lh + .5em);
 					padding: .25em .5em;
 					border: 1px dotted;
 					border-radius: .25em;
-				}
-				nice-search_wrapper:focus-within {
-					outline: 1px solid
+
+					&:focus-within {
+						outline: 1px solid
+					}
 				}
 				nice-search {
 					display: block;
@@ -378,19 +399,20 @@ customElements.define(
 					cursor: text;
 					white-space: nowrap;
 					overflow: clip;
-				}
-				nice-dropdown:not([inert]) nice-search {
-					overflow-x: scroll;
-				}
-				nice-search:focus {
-					outline: none;
-				}
-				nice-search br {
-					display: none;
-				}
-				nice-search:empty:before {
-					position: absolute;
-					opacity: .5;
+
+					&:focus {
+						outline: none;
+					}
+					&:empty:before {
+						position: absolute;
+						opacity: .5;
+					}
+					br {
+						display: none;
+					}
+					nice-dropdown:not([inert]) & {
+						overflow-x: scroll;
+					}
 				}
 				nice-presentation {
 					display: block;
@@ -416,6 +438,11 @@ customElements.define(
 					this.toggleDisabled();
 					break;
 			}
+		}
+
+
+		get interacted() {
+			return this.internals.states.has('interacted');
 		}
 
 

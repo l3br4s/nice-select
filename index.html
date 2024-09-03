@@ -16,13 +16,24 @@
 			color:red;
 		}
 
-		nice-select:not(:valid) {
-			outline: 2px solid red;
-		}
-		nice-select:valid {
-			outline: 2px solid yellowgreen;
+		nice-select {
+			outline-offset: 3px;
 		}
 
+		nice-select:invalid {
+			box-shadow: 0 0 0 6px orange;
+		}
+
+		nice-select:state(interacted):invalid {
+			box-shadow: 0 0 0 6px crimson;
+		}
+		nice-select:state(interacted):valid {
+			box-shadow: 0 0 0 6px yellowgreen;
+		}
+
+		nice-select:state(interacted) {
+			box-shadow: 0 0 0 6px lightskyblue;
+		}
 	</style>
 
 	<script src="webcomp.js" defer></script>
@@ -51,9 +62,9 @@
 				console.log(entry);
 			}
 
-			console.log(form.checkValidity());
+			console.log('validity', form.checkValidity());
 
-			form.requestSubmit();
+			// form.requestSubmit();
 		}
 	</script>
 </head>
@@ -64,11 +75,11 @@
 	<p>
 		Es war ein schöner Tag für den
 
-		<nice-select name="nice" data-search placeholder="Bitte wählen" data-search-placeholder="Suche..." disabled>
+		<nice-select name="nice" data-search placeholder="Bitte wählen" data-search-placeholder="Suche..." required>
 			<option value="Keuner">Keuner</option>
 			<optgroup label="Ums Eck">
 				<option value="Kranz">Kranz</option>
-				<option value="Kanzler" disabled>Kanzler</option>
+				<option value="Kanzler" >Kanzler</option>
 			</optgroup>
 			<option value="Kandidat">Kandidat</option>
 			<option value="nix">
@@ -77,6 +88,7 @@
 			<option value="Meute">Meute</option>
 			<option value="" style="color:green">Meinung</option>
 			<input type="checkbox" name="bs" value="Kanzler"> Cheklc
+			<b>Sehr geehrte Damen und Herren,</b>
 		</nice-select>
 
 		in Stralsund.
@@ -85,7 +97,8 @@
 	<input type="text" name="text1" id="" value=""><br>
 	<input type="text" name="text2" id="" value="nix2"><br>
 
-	<button type="button" onclick="logFormData()">Submit</button>
+	<button type="button" onclick="logFormData()">Log</button>
+	<button>Submit</button>
 </form>
 
 
@@ -123,7 +136,9 @@
 <script>
 	const nice = document.querySelector('nice-select');
 
-	// console.log('validity', nice.checkValidity(), nice.validity);
+	nice.setCustomValidity('invalid');
+
+	nice.addEventListener('change', logFormData);
 </script>
 
 </body>
