@@ -11,15 +11,19 @@ customElements.define(
 			this.internals = this.attachInternals();
 
 			this.dropdownElement = document.createElement('nice-dropdown');
+			this.dropdownElement.setAttribute('part', 'dropdown');
 			const dropdownInner = document.createElement('nice-dropdown-inner');
+			dropdownInner.setAttribute('part', 'dropdown-inner');
 			this.dropdownPadding = document.createElement('nice-dropdown-padding');
+			this.dropdownPadding.setAttribute('part', 'dropdown-padding');
 			this.dropdownElement.append(dropdownInner);
 			dropdownInner.append(this.dropdownPadding);
 			this.optionListElement = document.createElement('nice-optionlist');
-			this.focusElement;
+			this.optionListElement.setAttribute('part', 'optionlist');
 
 			this.placeholder = this.getAttribute('placeholder');
 			this.presentationElement = document.createElement('nice-presentation');
+			this.presentationElement.setAttribute('part', 'presentation');
 			this.presentationElement.textContent = this.placeholder || 'Select';
 
 			this.allOptions = [];
@@ -40,8 +44,9 @@ customElements.define(
 
 				if(this.searchEnabled) {
 					const searchInputWrapper = document.createElement('nice-search-wrapper');
+					searchInputWrapper.setAttribute('part', 'search-wrapper');
 					this.searchInputElement = document.createElement('nice-search');
-					this.searchInputElement.setAttribute('part', 'nice-search');
+					this.searchInputElement.setAttribute('part', 'search');
 					this.searchInputElement.contentEditable = 'true';
 					this.dropdownPadding?.insertBefore(searchInputWrapper, this.dropdownPadding.firstChild);
 					searchInputWrapper.appendChild(this.searchInputElement);
@@ -175,9 +180,10 @@ customElements.define(
 				if (node?.nodeName === 'OPTGROUP') {
 					const newOptgroupElement = document.createElement('nice-optgroup');
 					const newOptgroupLabel = document.createElement('nice-optgroup-label');
+					newOptgroupLabel.setAttribute('part', 'optgroup-label');
 					newOptgroupLabel.textContent = node.getAttribute('label');
 					newOptgroupElement.appendChild(newOptgroupLabel);
-					newOptgroupElement.setAttribute('part', 'nice-optgroup');
+					newOptgroupElement.setAttribute('part', 'optgroup');
 
 					this.optionListElement?.append(newOptgroupElement);
 
@@ -423,7 +429,8 @@ customElements.define(
 					display: block;
 					overflow: hidden;
 					height: calc(1lh + .5em);
-					padding: .25em .5em;
+					padding-inline-start: var(--nice-option-padding-start);
+					padding-inline-end: var(--nice-option-padding-end);
 					border: 1px dotted;
 					border-radius: .25em;
 
@@ -434,6 +441,7 @@ customElements.define(
 				nice-search {
 					display: block;
 					width: 100%;
+					padding-block: .25em;
 					cursor: text;
 					white-space: nowrap;
 					overflow: clip;
