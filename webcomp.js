@@ -93,15 +93,15 @@ customElements.define(
 
 			this.selectCurrrentOption = () => {
 				if (!this.currentOption || this.currentOption?.hasAttribute('disabled')) return;
+				this.skipObservers = true;
 
 				for (let option of this.allOptions) {
 					option.removeAttribute('selected');
 				}
 
-				this.submitValue = this.currentOption.value;
-				this.internals.setFormValue(this.submitValue || null);
+				this.internals.setFormValue(this.currentOption.value || null);
 
-				if (this.submitValue) {
+				if (this.currentOption.value) {
 					this.internals.states.add('valid');
 					this.internals.setValidity({valueMissing: false});
 				}
@@ -112,6 +112,18 @@ customElements.define(
 
 				this.currentOption.setAttribute('selected', '');
 
+				const target = [...this.querySelectorAll('option')].filter((option) => (
+					option.value === this.currentOption.value
+					|| option.textContent === this.currentOption.textContent
+				))[0];
+
+				if (target) {
+					for (let option of this.querySelectorAll('option')) {
+						option.removeAttribute('selected');
+					}
+					target.setAttribute('selected', '');
+				}
+
 				if (this.currentOption?.textContent) {
 					this.presentationElement.textContent = this.currentOption?.textContent;
 				}
@@ -120,6 +132,10 @@ customElements.define(
 				}
 
 				this.dispatchEvent(this.change);
+
+				requestAnimationFrame(() => {
+					this.skipObservers = false;
+				})
 			}
 
 
@@ -234,35 +250,56 @@ customElements.define(
 			}
 
 
-			const childListCallback = (records) => {
-				for (const record of records) {
-					for (const node of record.addedNodes) {
-						addValidNodeToOptions(node);
+			const updateOptions = () => {
+				this.allOptions = [];
+				this.availableOptions = [];
+				this.visibleOptions = [];
+
+				this.optionListElement.innerHTML = '';
+
+				for (const node of this.childNodes) {
+					addValidNodeToOptions(node);
+
+					requestAnimationFrame(() => {
 						removeInvalidNodeFromDOM(node);
-					}
+					})
 				}
-				this.style.setProperty('--nice-min-width', '0');
-				requestAnimationFrame(calculateMinWidth);
+			}
+			updateOptions();
+
+
+			let callbackTimeout;
+			const childListCallback = (records) => {
+				if(this.skipObservers) return;
+
+				clearTimeout(callbackTimeout);
+
+				callbackTimeout = setTimeout(() => {
+					updateOptions();
+					this.style.setProperty('--nice-min-width', '0');
+					requestAnimationFrame(calculateMinWidth);
+				}, 10);
 			}
 
 
 			const calculateMinWidth = () => {
+				this.skipObservers = true;
+
 				this.style.setProperty('--nice-min-width', Math.max(this.optionListElement?.offsetWidth ?? 0, this.presentationElement?.offsetWidth ?? 0) + 'px');
-			}
-			requestAnimationFrame(calculateMinWidth);
-
-
-			for (let node of this.childNodes) {
-				addValidNodeToOptions(node);
 
 				requestAnimationFrame(() => {
-					removeInvalidNodeFromDOM(node);
+					this.skipObservers = false;
 				})
 			}
 
 
 			this.childListObserver = new MutationObserver(childListCallback);
-			this.childListObserver.observe(this, { childList: true });
+			this.childListObserver.observe(this, {
+				childList: true,
+				subtree: true,
+				characterData: true,
+				attributes: true,
+			});
 
 
 			this.optionListElement.addEventListener('click', (e) => {
@@ -480,7 +517,7 @@ customElements.define(
 					break;
 				case 'placeholder':
 					this.placeholder = newValue;
-					this.presentationElement.textContent = this.submitValue || this.placeholder;
+					this.presentationElement.textContent = this.currentOption?.value || this.placeholder;
 					break;
 				case 'disabled':
 					this.toggleDisabled();
