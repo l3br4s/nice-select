@@ -12,12 +12,12 @@ customElements.define(
 
 			this.dropdownElement = document.createElement('nice-dropdown');
 			this.dropdownElement.setAttribute('part', 'dropdown');
-			const dropdownInner = document.createElement('nice-dropdown-inner');
-			dropdownInner.setAttribute('part', 'dropdown-inner');
+			this.dropdownInner = document.createElement('nice-dropdown-inner');
+			this.dropdownInner.setAttribute('part', 'dropdown-inner');
 			this.dropdownPadding = document.createElement('nice-dropdown-padding');
 			this.dropdownPadding.setAttribute('part', 'dropdown-padding');
-			this.dropdownElement.append(dropdownInner);
-			dropdownInner.append(this.dropdownPadding);
+			this.dropdownElement.append(this.dropdownInner);
+			this.dropdownInner.append(this.dropdownPadding);
 			this.optionListElement = document.createElement('nice-optionlist');
 			this.optionListElement.setAttribute('part', 'optionlist');
 
@@ -63,7 +63,7 @@ customElements.define(
 						}
 
 						for (let optgroup of this.optionListElement.querySelectorAll('nice-optgroup')) {
-							optgroup.hidden = optgroup.querySelector('option:not([hidden])') ? false : true;
+							optgroup.hidden = !optgroup.querySelector('option:not([hidden])');
 						}
 					});
 
@@ -277,12 +277,12 @@ customElements.define(
 				callbackTimeout = setTimeout(() => {
 					updateOptions();
 					this.style.setProperty('--nice-min-width', '0');
-					requestAnimationFrame(calculateMinWidth);
+					requestAnimationFrame(calculateSizes);
 				}, 10);
 			}
 
 
-			const calculateMinWidth = () => {
+			const calculateSizes = () => {
 				this.skipObservers = true;
 
 				this.style.setProperty('--nice-min-width', Math.max(this.optionListElement?.offsetWidth ?? 0, this.presentationElement?.offsetWidth ?? 0) + 'px');
@@ -361,6 +361,11 @@ customElements.define(
 					--nice-optgroup-label-size: .85;
 					--nice-min-width: ${minWidth};
 					--nice-max-height: 15lh;
+					--nice-background-color: white;
+					--nice-color: black;
+					--nice-focus-background-color: #f0f0f0;
+					--nice-selected-background-color: #444;
+					--nice-selected-color: white;
 					display: inline-block;
 					z-index: 1;
 					padding-top: var(--nice-padding-top);
@@ -368,6 +373,16 @@ customElements.define(
 					padding-inline-start: var(--nice-padding-start);
 					padding-inline-end: var(--nice-padding-end);
 					min-width: max(var(--nice-min-width), ${minWidth});
+					color: var(--nice-color);
+				}
+				@media (prefers-color-scheme: dark) {
+					:host {
+						--nice-background-color: black;
+						--nice-color: white;
+						--nice-focus-background-color: #4f4f4f;
+						--nice-selected-background-color: #f0f0f0;
+						--nice-selected-color: black;
+					}
 				}
 				:host([disabled]) {
 					color: gray;
@@ -379,19 +394,22 @@ customElements.define(
 					left: 0;
 					right: 0;
 					z-index: -1;
+					display: grid;
+					grid-template-rows: 0fr;
 					padding-top: calc(1lh + var(--nice-padding-top) + var(--nice-padding-bottom) /2);
 					border: 1px solid;
 					border-radius: .25em;
-					background: white;
-					overflow: hidden;
-					overflow: hidden;
-					transition: 1500ms;
+					background: var(--nice-background-color);
+					overflow: clip;
+					transition: 200ms;
 				}
 				nice-dropdown-inner {
+					grid-row: 1 / span 2;
 				}
 				:host(:focus-within),
 				:host(:state(open)) {
 					nice-dropdown {
+						grid-template-rows: 1fr;
 					}
 				}
 				nice-dropdown-padding {
@@ -417,8 +435,8 @@ customElements.define(
 					transition: 130ms;
 
 					&[selected] {
-						background: #444;
-						color: white;
+						background: var(--nice-selected-background-color);
+						color: var(--nice-selected-color);
 					}
 					&[disabled] {
 						color: inherit;
@@ -429,7 +447,7 @@ customElements.define(
 					}
 					&:not([disabled], [selected]):focus,
 					&:not([disabled], [selected]):hover {
-						background: #f0f0f0;
+						background: var(--nice-focus-background-color);
 					}
 				}
 				nice-optgroup {
@@ -471,7 +489,7 @@ customElements.define(
 					border: 1px dotted;
 					border-radius: .25em;
 
-					&:focus-within {
+					&:focus-within nice-dropdown {
 						outline: 1px solid;
 					}
 				}
@@ -488,7 +506,7 @@ customElements.define(
 					}
 					&:empty:before {
 						position: absolute;
-						opacity: .5;
+						opacity: .6;
 					}
 					div, br {
 						display: none;
