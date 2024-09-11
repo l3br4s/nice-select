@@ -12,12 +12,12 @@ customElements.define(
 
 			this.dropdownElement = document.createElement('nice-dropdown');
 			this.dropdownElement.setAttribute('part', 'dropdown');
-			this.dropdownInner = document.createElement('nice-dropdown-inner');
-			this.dropdownInner.setAttribute('part', 'dropdown-inner');
-			this.dropdownPadding = document.createElement('nice-dropdown-padding');
-			this.dropdownPadding.setAttribute('part', 'dropdown-padding');
-			this.dropdownElement.append(this.dropdownInner);
-			this.dropdownInner.append(this.dropdownPadding);
+			this.dropdownInnerElement = document.createElement('nice-dropdown-inner');
+			this.dropdownInnerElement.setAttribute('part', 'dropdown-inner');
+			this.dropdownPaddingElement = document.createElement('nice-dropdown-padding');
+			this.dropdownPaddingElement.setAttribute('part', 'dropdown-padding');
+			this.dropdownElement.append(this.dropdownInnerElement);
+			this.dropdownInnerElement.append(this.dropdownPaddingElement);
 			this.optionListElement = document.createElement('nice-optionlist');
 			this.optionListElement.setAttribute('part', 'optionlist');
 
@@ -49,7 +49,7 @@ customElements.define(
 					this.searchInputElement = document.createElement('nice-search');
 					this.searchInputElement.setAttribute('part', 'search');
 					this.searchInputElement.contentEditable = 'true';
-					this.dropdownPadding?.insertBefore(searchInputWrapper, this.dropdownPadding.firstChild);
+					this.dropdownPaddingElement?.insertBefore(searchInputWrapper, this.dropdownPaddingElement.firstChild);
 					searchInputWrapper.appendChild(this.searchInputElement);
 
 					this.searchInputElement.addEventListener('input', (e) => {
@@ -191,7 +191,7 @@ customElements.define(
 			this.shadow.append(this.presentationElement);
 			this.shadow.append(this.dropdownElement);
 
-			this.dropdownPadding.append(this.optionListElement);
+			this.dropdownPaddingElement.append(this.optionListElement);
 
 			const addValidNodeToOptions = (node, parent = this.optionListElement) => {
 				if (node?.nodeName === 'OPTGROUP') {
@@ -274,6 +274,7 @@ customElements.define(
 
 			let callbackTimeout;
 			const childListCallback = (records) => {
+
 				if(this.skipObservers) return;
 
 				clearTimeout(callbackTimeout);
@@ -289,7 +290,7 @@ customElements.define(
 			const calculateSizes = () => {
 				this.skipObservers = true;
 
-				this.style.setProperty('--nice-min-width', Math.max(this.optionListElement?.offsetWidth ?? 0, this.presentationElement?.offsetWidth ?? 0) + 'px');
+				this.style.setProperty('--nice-min-width', Math.max(this.dropdownPaddingElement?.offsetWidth ?? 0, this.presentationElement?.offsetWidth ?? 0) + 'px');
 
 				requestAnimationFrame(() => {
 					this.skipObservers = false;
@@ -635,19 +636,31 @@ customElements.define(
 );
 
 
-function niceSelect(target = document) {
-	const selects = target.querySelectorAll('select');
+function niceSelect(selector) {
 
-	for (let select of selects) {
-		const niceSelect = document.createElement('nice-select');
-		niceSelect.innerHTML = select.innerHTML;
-
-		const attributes = select.attributes;
-		for (let attribute of attributes) {
-			niceSelect.setAttribute(attribute.name, attribute.value);
+	if (selector) {
+		for (let target of document.querySelectorAll(selector)) {
+			replaceSelects(target);
 		}
+	}
+	else {
+		replaceSelects();
+	}
 
-		select.replaceWith(niceSelect);
+	function replaceSelects(target = document) {
+		const selects = target.querySelectorAll('select');
+
+		for (let select of selects) {
+			const niceSelect = document.createElement('nice-select');
+			niceSelect.innerHTML = select.innerHTML;
+
+			const attributes = select.attributes;
+			for (let attribute of attributes) {
+				niceSelect.setAttribute(attribute.name, attribute.value);
+			}
+
+			select.replaceWith(niceSelect);
+		}
 	}
 }
 

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>WebComp</title>
+
+	<style>
+		html {
+			font-family: sans-serif;
+		}
+	</style>
+
+	<script src="nice-select.js"></script>
+
+	<script>
+		let ti = 1;
+		function addOption() {
+			var select = document.querySelector('nice-select');
+			var option = document.createElement('option');
+			option.textContent = 'Test ' + ti++;
+			option.value = 'test';
+			select.appendChild(option);
+		}
+
+
+		function toggleSearch() {
+			var select = document.querySelector('nice-select');
+			select.toggleAttribute('data-search');
+		}
+
+
+		function logFormData() {
+			const form = document.querySelector('form');
+
+			const data = new FormData(form);
+			for (let entry of data.entries()) {
+				console.log(entry);
+			}
+
+			console.log('validity', form.checkValidity());
+		}
+	</script>
+</head>
+
+<body>
+
+<form action="/">
+	<p>
+		The nicest <code>&lt;select&gt;</code> has
+
+		<select name="nice" data-search placeholder="Choose one..." data-search-placeholder="Search..." required data-validity-message="Bitte wähle eine Option.">
+			<optgroup label="Things mit K">
+				<option>King</option>
+				<option>Knight</option>
+				<option>Kancellor</option>
+			</optgroup>
+
+			<optgroup label="On the table">
+				<option>Mouse</option>
+				<option>Napkin</option>
+			</optgroup>
+
+			<option value="options without Text won't be rendered"></option>
+
+			<option>Just an option</option>
+			<option>Another option</option>
+			<option>One more option</option>
+
+			<strong>if it's not an option, it will be removed</strong>
+
+			<optgroup>
+				optgroups without options won't be rendered
+			</optgroup>
+
+			<optgroup>
+				optgroups don't need labels
+				<option value="">In an optgroup</option>
+			</optgroup>
+
+			<optgroup label="Nothing">
+				empty values will be replaced by textContent
+				<option value="">Empty value</option>
+			</optgroup>
+
+		</select>
+
+		in it!
+	</p>
+
+	<input type="text" name="text1" id="" required placeholder="required field"><br><br>
+
+	<button type="button" onclick="logFormData()">Log</button>
+	<button>Submit</button>
+</form>
+
+
+
+<br>
+<button onclick="addOption()">
+	Add option
+</button>
+<br>
+<br>
+<button onclick="toggleSearch()">
+	Toggle search
+</button>
+
+
+<script>
+	const nice = document.querySelector('nice-select');
+
+	niceSelect();
+</script>
+
+</body>
+</html>
