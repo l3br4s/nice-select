@@ -47,10 +47,10 @@ Additonally, **nice-select** exposes the following states to be used in a `:stat
 
 **nice-select** exposes the following getters and setters:
 
--	`interacted` (boolean, get) - return true if the user has interacted with the dropdown
+-	`interacted` (boolean, get) - return true if the user has interacted with the element
 -	`open` (boolean, get/set) - the open/closed state of the dropdown
--	`value` (string, get/set) - the value of the selected option
--	`validity` (boolean, get/set) - whether the a valid option has been selected
+-	`value` (string, get/set) - the current value of the element
+-	`validity` (boolean, get/set) - whether a valid option has been selected
 
 ## Events
 
