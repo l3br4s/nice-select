@@ -33,6 +33,11 @@ The full list of parts is:
 
 `dropdown`, `dropdown-inner`, `dropdown-padding`, `optgroup`, `optgroup-label`, `option`, `optionlist`, `presentation`, `search`, `search-wrapper`.
 
+To set the dimensions of the element, the following custom properties can be used on the `nice-select` selector:
+
+-	`--nice-min-width` - the minimum width of the `<nice-select>` element, regardless of content. The element will grow to accomodate the longest option name.
+-	`--nice-max-height` - the maxmimum height of the `<nice-select>` element, regardless of content. The element will scroll if there are more options than can be displayed.
+
 Additonally, **nice-select** exposes the following states to be used in a `:state()` pseudo class:
 
 -	`open` - when the dropdown is open
@@ -52,3 +57,7 @@ Additonally, **nice-select** exposes the following states to be used in a `:stat
 **nice-select** exposes the following events:
 
 -	`change` - when the value of the `<nice-select>` changes
+
+## Changing options and attributes
+
+Any live changes made to the children of the `<nice-select>` element will be reflected in the shadow DOM, therefore no additional methods are required.
