@@ -69,7 +69,7 @@ customElements.define(
 
 					this.focusElement = this.searchInputElement;
 					this.onfocus = () => {
-						this.searchInputElement.focus();
+						this.focusElement.focus();
 					}
 				}
 				else {
@@ -194,6 +194,9 @@ customElements.define(
 
 			const addValidNodeToOptions = (node, parent = this.optionListElement) => {
 				if (node?.nodeName === 'OPTGROUP') {
+					const options = [...node.querySelectorAll('option')];
+					if (options.filter((option) => option.textContent.trim()).length === 0) return;
+
 					const newOptgroupElement = document.createElement('nice-optgroup');
 					const newOptgroupLabel = document.createElement('nice-optgroup-label');
 					newOptgroupLabel.setAttribute('part', 'optgroup-label');
@@ -395,7 +398,7 @@ customElements.define(
 					right: 0;
 					z-index: -1;
 					display: grid;
-					grid-template-rows: 0fr;
+					// grid-template-rows: 0fr;
 					padding-top: calc(1lh + var(--nice-padding-top) + var(--nice-padding-bottom) /2);
 					border: 1px solid;
 					border-radius: .25em;
@@ -452,26 +455,29 @@ customElements.define(
 				}
 				nice-optgroup {
 					display: block;
-					padding-inline-start: var(--nice-option-padding-start);
 
 					&:not(:first-child) {
-						padding-top: calc(var(--nice-option-padding-top) * 2);
-						padding-bottom: var(--nice-option-padding-bottom);
-						margin-top: var(--nice-option-padding-top);
-						border-top: 1px dotted;
+						margin-top: var(--nice-option-padding-bottom);
 					}
 					&:not(:last-child) {
-						margin-bottom: var(--nice-option-padding-bottom);
+						padding-bottom: var(--nice-option-padding-bottom);
 						border-bottom: 1px dotted;
+					}
+					option + & {
+						padding-top: calc(var(--nice-option-padding-top));
+						border-top: 1px dotted;
+					}
+					& + option {
+						margin-top: var(--nice-option-padding-bottom);
 					}
 					&[hidden] {
 						display: none;
 					}
-					option {
-						margin-inline-start: var(--nice-option-padding-start);
+					&:has(nice-optgroup-label:not(:empty)) {
+						padding-inline-start: var(--nice-option-padding-start);
 
-						&:first-of-type {
-							margin-top: var(--nice-option-padding-top);
+						option {
+							margin-inline-start: var(--nice-option-padding-start);
 						}
 					}
 				}
@@ -479,6 +485,10 @@ customElements.define(
 					display: block;
 					font-size: 90%;
 					font-weight: bold;
+
+					&:not(:empty) {
+						padding-block: var(--nice-option-padding-top) var(--nice-option-padding-bottom);
+					}
 				}
 				nice-search-wrapper {
 					display: block;
@@ -597,26 +607,20 @@ customElements.define(
 );
 
 
+function niceSelect(target = document) {
+	const selects = target.querySelectorAll('select');
 
-// const selects = document.querySelectorAll('select');
+	for (let select of selects) {
+		const niceSelect = document.createElement('nice-select');
+		niceSelect.innerHTML = select.innerHTML;
 
-// for (let select of selects) {
-// 	const niceSelect = document.createElement('nice-select');
+		const attributes = select.attributes;
+		for (let attribute of attributes) {
+			niceSelect.setAttribute(attribute.name, attribute.value);
+		}
 
-// 	for (let option of select.options) {
-// 		const input = document.createElement('input');
-// 		input.type = 'radio';
-// 		input.value = option.value;
-// 		input.name = 'nice';
-// 		input.placeholder = option.text;
-// 		niceSelect.append(input);
-// 	}
-
-// 	if (select.hasAttribute('data-search')) {
-// 		niceSelect.setAttribute('search', '');
-// 	}
-
-// 	select.replaceWith(niceSelect);
-// }
+		select.replaceWith(niceSelect);
+	}
+}
 
 

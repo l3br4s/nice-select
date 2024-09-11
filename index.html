@@ -81,19 +81,31 @@
 		Es war ein schöner Tag für den
 
 		<nice-select name="nice" data-search placeholder="Bitte wählen" data-search-placeholder="Suche..." required>
-			<option value="Keuner">Keuner</option>
 			<optgroup label="Ums Eck">
 				<option value="Kranz">Kranz</option>
 				<option value="Kanzler" >Kanzler</option>
+			</optgroup>
+			<option value="Keuner">Keuner</option>
+			<optgroup label="Tisch">
+				<option value="Maus">Maus</option>
+				<option value="Ralbol">Ralbol</option>
+			</optgroup>
+			<optgroup label="wieder nix">
+				<option value="gyaru">Gyaru</option>
+			</optgroup>
+			<optgroup>
+				<option>Banana</option>
 			</optgroup>
 			<option value="Kandidat">Kandidat</option>
 			<option value="nix">
 				<style></style>
 			</option>
-			<option value="Meute">Meute</option>
-			<option value="" style="color:green">Meinung</option>
+			<option>Meute</option>
 			<input type="checkbox" name="bs" value="Kanzler"> Cheklc
 			<b>Sehr geehrte Damen und Herren,</b>
+			<optgroup label="nix">
+				<option value="" style="color:green">Meinung</option>
+			</optgroup>
 		</nice-select>
 
 		in Stralsund.
@@ -121,14 +133,17 @@
 <br>
 
 <select name="koins" id="mor" data-search>
+	<optgroup label="">
+		<option value="test4"></option>
+		<option value="">Hurz</option>
+	</optgroup>
 	<option value="test">Test</option>
 	<optgroup label="Feier">
 		<option value="test2">Feier2</option>
 		<option value="test3">Gaudi3</option>
-		<option value="test4"></option>
-		<option value="">Hurz</option>
 	</optgroup>
 	<optgroup label="Absage">
+		<option>Banana</option>
 	</optgroup>
 	<option value="">leer</option>
 
@@ -160,6 +175,8 @@
 
 <script>
 	const nice = document.querySelector('nice-select');
+
+	niceSelect();
 
 	nice.addEventListener('change', logFormData);
 </script>
