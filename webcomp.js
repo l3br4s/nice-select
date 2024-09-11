@@ -29,6 +29,7 @@ customElements.define(
 			this.allOptions = [];
 			this.availableOptions = [];
 			this.visibleOptions = [];
+			this.validityMessage = 'Please select on option.';
 
 			this.shadow = this.attachShadow({
 				mode: 'open',
@@ -107,7 +108,7 @@ customElements.define(
 				}
 				else {
 					this.internals.states.delete('valid');
-					this.internals.setValidity({valueMissing: true}, 'value is empty');
+					this.internals.setValidity({valueMissing: true}, this.validityMessage);
 				}
 
 				this.currentOption.setAttribute('selected', '');
@@ -180,9 +181,10 @@ customElements.define(
 			this.updateSearchPlaceHolderCSS(this.dataset.searchPlaceholder);
 			this.shadow.adoptedStyleSheets = [css, this.searchPlaceHolderCSS];
 
+			this.validityMessage = this.getAttribute('data-validity-message') ?? this.validityMessage;
 			this.internals.setValidity({
 				valueMissing: true,
-			}, 'value is empty');
+			}, this.validityMessage);
 
 			this.tabIndex = 0;
 
@@ -190,7 +192,6 @@ customElements.define(
 			this.shadow.append(this.dropdownElement);
 
 			this.dropdownPadding.append(this.optionListElement);
-
 
 			const addValidNodeToOptions = (node, parent = this.optionListElement) => {
 				if (node?.nodeName === 'OPTGROUP') {
@@ -316,6 +317,21 @@ customElements.define(
 			});
 
 
+			function getListOffset(element, viewport) {
+				let offset = element.offsetTop;
+				const parent = element.parentNode;
+
+				function addOffset(parent) {
+					if (!parent || parent === viewport) return;
+					offset += parent.offsetTop;
+					addOffset(parent.parentNode);
+				}
+				addOffset(parent);
+
+				return offset;
+			}
+
+
 			this.addEventListener('keydown', (e) => {
 				if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
 					e.preventDefault();
@@ -340,6 +356,18 @@ customElements.define(
 
 					this.internals.states.add('interacted');
 					this.internals.states.add('open');
+
+					const listHeight = this.optionListElement.offsetHeight;
+					const listScrollTop = this.optionListElement.scrollTop;
+					const currentTopOffset = getListOffset(this.currentOption, this.optionListElement);
+					const currentBottomOffset = currentTopOffset + this.currentOption.offsetHeight;
+
+					if (currentBottomOffset > listHeight + listScrollTop) {
+						this.optionListElement.scrollTop = currentBottomOffset - listHeight;
+					}
+					else if (currentTopOffset < listScrollTop) {
+						this.optionListElement.scrollTop = currentTopOffset;
+					}
 				}
 			});
 
@@ -398,7 +426,7 @@ customElements.define(
 					right: 0;
 					z-index: -1;
 					display: grid;
-					// grid-template-rows: 0fr;
+					grid-template-rows: 0fr;
 					padding-top: calc(1lh + var(--nice-padding-top) + var(--nice-padding-bottom) /2);
 					border: 1px solid;
 					border-radius: .25em;
@@ -435,7 +463,7 @@ customElements.define(
 					height: 1lh;
 					padding-block: var(--nice-option-padding-top) var(--nice-option-padding-bottom);
 					padding-inline: var(--nice-option-padding-start) var(--nice-option-padding-end);
-					transition: 130ms;
+					transition: 100ms;
 
 					&[selected] {
 						background: var(--nice-selected-background-color);
