@@ -4,7 +4,9 @@
 
 Call the script:
 
-`<script src="nice-select.js"></script>`
+```html
+<script src="nice-select.js"></script>
+```
 
 Insert select elements in your HTML as usual but replace `<select>` with `<nice-select>`.
 
