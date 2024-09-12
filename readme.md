@@ -36,7 +36,7 @@ The full list of parts is:
 To set the dimensions of the element, the following custom properties can be used on the `nice-select` selector:
 
 -	`--nice-min-width` - the minimum width of the `<nice-select>` element, regardless of content. The element will grow to accomodate the longest option name.
--	`--nice-max-height` - the maxmimum height of the `<nice-select>` element, regardless of content. The element will scroll if there are more options than can be displayed.
+-	`--nice-max-height` - the maxmimum height of the `<nice-select>` element, regardless of content. The element will scroll if there are more options than can be displayed at once.
 
 Additonally, **nice-select** exposes the following states to be used in a `:state()` pseudo class:
 
@@ -50,7 +50,7 @@ Additonally, **nice-select** exposes the following states to be used in a `:stat
 -	`interacted` (boolean, get) - return true if the user has interacted with the element
 -	`open` (boolean, get/set) - the open/closed state of the dropdown
 -	`value` (string, get/set) - the current value of the element
--	`validity` (boolean, get/set) - whether a valid option has been selected
+-	`validity` (boolean, get) - whether a valid option has been selected
 
 ## Events
 
